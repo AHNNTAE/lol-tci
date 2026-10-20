@@ -1,0 +1,151 @@
+{
+  "n_matches": 38075,
+  "n_rows": 3900364,
+  "rows_per_lane": {
+    "BOTTOM": 975091,
+    "JUNGLE": 975091,
+    "MIDDLE": 975091,
+    "TOP": 975091
+  },
+  "blue_win_rate": 0.5199737360472751,
+  "game_minutes": {
+    "count": 38075.0,
+    "mean": 28.089627489603853,
+    "std": 4.9110518214437295,
+    "min": 20.016666666666666,
+    "25%": 24.433333333333334,
+    "50%": 27.683333333333334,
+    "75%": 30.83333333333333,
+    "max": 55.85
+  },
+  "compare": "2,000경기 · 경기 단위 5-fold",
+  "final_eval": "전체 경기",
+  "lanes": {
+    "TOP": {
+      "model": "Lasso [time-norm]",
+      "MSE": 0.09671059750938808,
+      "RMSE": 0.31098327528886194,
+      "MAE": 0.24055629988417573,
+      "R2": 0.8856094101371912,
+      "RMSE_3-10": 0.2867413539811356,
+      "RMSE_11-20": 0.2813881857648746,
+      "RMSE_21+": 0.36739847192264746,
+      "AUC_win@15": 0.6184441023622385,
+      "RMSE_std": NaN,
+      "baseline_RMSE": 0.919508365893457,
+      "features": [
+        "minute",
+        "cs_gap",
+        "dmg_gap",
+        "kills_gap",
+        "deaths_gap",
+        "assists_gap",
+        "cc_time_gap",
+        "wards_placed_gap",
+        "wards_killed_gap",
+        "solo_kills_gap",
+        "dmg_taken_gap",
+        "plates_gap",
+        "turrets_gap",
+        "grubs_herald_gap"
+      ]
+    },
+    "JUNGLE": {
+      "model": "Lasso [time-norm]",
+      "MSE": 0.07607856165920371,
+      "RMSE": 0.2758234247833271,
+      "MAE": 0.21459068147149118,
+      "R2": 0.9051520670718373,
+      "RMSE_3-10": 0.2402445055939517,
+      "RMSE_11-20": 0.28198602828154656,
+      "RMSE_21+": 0.3014365886187911,
+      "AUC_win@15": 0.6709665194654666,
+      "RMSE_std": NaN,
+      "baseline_RMSE": 0.8956157985658074,
+      "features": [
+        "minute",
+        "jungle_cs_gap",
+        "cs_gap",
+        "dmg_gap",
+        "kills_gap",
+        "deaths_gap",
+        "assists_gap",
+        "cc_time_gap",
+        "wards_placed_gap",
+        "wards_killed_gap",
+        "dragons_gap",
+        "grubs_herald_gap",
+        "barons_gap"
+      ]
+    },
+    "MIDDLE": {
+      "model": "Lasso [time-norm]",
+      "MSE": 0.11968364155085169,
+      "RMSE": 0.34595323607512574,
+      "MAE": 0.27047421759087786,
+      "R2": 0.8517758047898268,
+      "RMSE_3-10": 0.3142778935451792,
+      "RMSE_11-20": 0.32529230791334096,
+      "RMSE_21+": 0.3998673804560502,
+      "AUC_win@15": 0.639951074932708,
+      "RMSE_std": NaN,
+      "baseline_RMSE": 0.8986075279664617,
+      "features": [
+        "minute",
+        "cs_gap",
+        "dmg_gap",
+        "kills_gap",
+        "deaths_gap",
+        "assists_gap",
+        "cc_time_gap",
+        "wards_placed_gap",
+        "wards_killed_gap",
+        "solo_kills_gap",
+        "dmg_taken_gap",
+        "plates_gap",
+        "turrets_gap"
+      ]
+    },
+    "BOTTOM": {
+      "model": "Lasso [time-norm]",
+      "MSE": 0.14330642715726563,
+      "RMSE": 0.3785583537015999,
+      "MAE": 0.29634455335884075,
+      "R2": 0.8250096920742533,
+      "RMSE_3-10": 0.3523555640955543,
+      "RMSE_11-20": 0.3558260542645267,
+      "RMSE_21+": 0.4305561320925793,
+      "AUC_win@15": 0.6594781114280218,
+      "RMSE_std": NaN,
+      "baseline_RMSE": 0.9049686414236946,
+      "features": [
+        "minute",
+        "cs_gap",
+        "dmg_gap",
+        "kills_gap",
+        "deaths_gap",
+        "assists_gap",
+        "cc_time_gap",
+        "wards_placed_gap",
+        "wards_killed_gap",
+        "dmg_taken_gap",
+        "plates_gap",
+        "turrets_gap",
+        "dragons_gap"
+      ]
+    }
+  },
+  "alpha": {
+    "TOP": 0.0008483567566831493,
+    "JUNGLE": 0.000624741657807886,
+    "MIDDLE": 0.0006143496843502844,
+    "BOTTOM": 0.0006982800923995754
+  },
+  "intercept": {
+    "TOP": 0.012657025447104415,
+    "JUNGLE": 0.05065328243546964,
+    "MIDDLE": 0.00444050999849604,
+    "BOTTOM": 0.0028747992520814555
+  },
+  "example_match": "KR_7461719584"
+}

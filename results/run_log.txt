@@ -1,0 +1,22 @@
+[data] matches=30, minute-rows=2888
+[target] 4개 라인 평균 승패 예측 정확도
+ time         10min  15min  20min    end
+target                                 
+dmg          0.575  0.608  0.725  0.742
+gold         0.592  0.667  0.692  0.825
+gold+dmg     0.575  0.675  0.692  0.808
+gold+xp      0.567  0.683  0.700  0.892
+gold+xp+dmg  0.567  0.708  0.708  0.850
+xp           0.542  0.625  0.667  0.908
+[cv] TOP done
+[cv] JUNGLE done
+[cv] MIDDLE done
+[cv] BOTTOM done
+[select]
+                     model      RMSE        R2
+lane                                         
+BOTTOM  Lasso [time-norm]  0.357991  0.861089
+JUNGLE  Lasso [time-norm]  0.229334  0.939916
+MIDDLE  Lasso [time-norm]  0.388436  0.825910
+TOP     Lasso [time-norm]  0.398813  0.825729
+[done] {"TOP": "Lasso [time-norm]", "JUNGLE": "Lasso [time-norm]", "MIDDLE": "Lasso [time-norm]", "BOTTOM": "Lasso [time-norm]"}
