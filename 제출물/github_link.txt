@@ -1,0 +1,2 @@
+GitHub 저장소: https://github.com/AHNNTAE/lol-tci
+보고서: https://github.com/AHNNTAE/lol-tci/blob/main/REPORT.md

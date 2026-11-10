@@ -1,0 +1,40 @@
+{
+  "n_players": 299,
+  "min_games": 30,
+  "median_games": 226.0,
+  "split_half_r_winrate": 0.12163021567018038,
+  "split_half_r_tci": 0.7892842568940138,
+  "corr_tci_winrate": 0.19873173450316228,
+  "lanes": {
+    "BOTTOM": 106,
+    "JUNGLE": 67,
+    "MIDDLE": 64,
+    "TOP": 62
+  },
+  "quadrants": {
+    "tci+_win+": 245,
+    "tci+_win-": 13,
+    "tci-_win+": 35,
+    "tci-_win-": 3
+  },
+  "pair": [
+    {
+      "alias": "소환사 006",
+      "lane": "TOP",
+      "games": 152,
+      "win_rate": 0.5592105263157895,
+      "tci": 0.5451561827480113,
+      "tci_rank": 6,
+      "win_rank": 129
+    },
+    {
+      "alias": "소환사 298",
+      "lane": "TOP",
+      "games": 309,
+      "win_rate": 0.5631067961165048,
+      "tci": -0.2976731717610962,
+      "tci_rank": 298,
+      "win_rank": 116
+    }
+  ]
+}
