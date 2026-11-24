@@ -33,9 +33,10 @@ from run_all import COLOR, INK, MUTED, save  # 그림 스타일 공유
 from tci_lane.data_process import LANES
 
 GROUPS = {  # 행동별 기여를 묶어서 보여 줄 범주
-    "파밍": ["cs_gap", "jungle_cs_gap"],
-    "교전": ["kills_gap", "assists_gap", "solo_kills_gap", "dmg_gap", "cc_time_gap"],
-    "생존": ["deaths_gap", "dmg_taken_gap"],
+    "파밍": ["cs_gap", "jungle_cs_gap", "lane_cs_gap"],
+    "교전": ["kills_gap", "assists_gap", "solo_kills_gap", "lane_solo_kills_gap", "dmg_gap",
+           "cc_time_gap", "kp_gap", "gank_gap", "roam_gap"],
+    "생존": ["deaths_gap", "lane_deaths_gap", "dmg_taken_gap"],
     "운영": ["plates_gap", "turrets_gap", "dragons_gap", "grubs_herald_gap", "barons_gap",
            "wards_placed_gap", "wards_killed_gap", "minute"],
 }

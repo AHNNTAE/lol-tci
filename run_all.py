@@ -41,6 +41,16 @@ plt.rcParams.update({"axes.unicode_minus": False, "axes.spines.top": False,
 COLOR = {"TOP": "#2a78d6", "JUNGLE": "#eb6834", "MIDDLE": "#1baf7a", "BOTTOM": "#eda100",
          "TEAM": "#52514e"}
 INK, MUTED = "#0b0b0b", "#8a8984"
+KOR = {  # 그림에 쓸 쉬운 이름
+    "cs_gap": "CS", "jungle_cs_gap": "정글 몬스터", "kills_gap": "킬", "deaths_gap": "데스",
+    "assists_gap": "어시스트", "solo_kills_gap": "솔로킬", "dmg_gap": "챔피언 피해량",
+    "dmg_taken_gap": "받은 피해", "cc_time_gap": "CC 시간", "wards_placed_gap": "와드 설치",
+    "wards_killed_gap": "와드 제거", "plates_gap": "포탑 방패", "turrets_gap": "포탑 파괴",
+    "dragons_gap": "드래곤", "grubs_herald_gap": "유충·전령", "barons_gap": "바론",
+    "lane_cs_gap": "라인전 CS(14분까지)", "lane_solo_kills_gap": "라인전 솔로킬(14분까지)",
+    "lane_deaths_gap": "라인전 데스(14분까지)", "gank_gap": "갱킹", "roam_gap": "로밍",
+    "kp_gap": "킬 관여율", "minute": "시간",
+}
 
 
 def save(fig, out, name):
@@ -140,38 +150,38 @@ def main(data_dir: str, out: str, features: str | None = None, end: str | None =
 
     # 최종 모델 선택: 기준선 제외, OOF RMSE 최소 모델과 1% 이내로 차이 나는 후보는 '동률'로 보고
     # 더 단순·해석 가능한 모델을 우선한다 (PREFER 순서). 표본이 클수록 선형 모델끼리 차이가 0에 수렴하기 때문.
-    PREFER = ["Lasso", "Ridge", "LinearRegression", "HistGradientBoosting", "RandomForest",
-              "MLP(64-32)", "KNN(k=15)", "SVR(RBF)"]
+    PREFER = ["Lasso", "Ridge", "LinearRegression", "LightGBM-style"]
     cand = summ[~summ.model.str.startswith("Mean")].copy()
     cand["base"] = cand.model.str.split(" [", regex=False).str[0]
     cand["rank"] = cand.base.map(PREFER.index)
     picks = []
     for lane, g in cand.groupby("lane"):
-        tied = g[g.RMSE <= g.RMSE.min() * 1.01]
+        # R² 차이가 0.01 미만이면 사실상 같은 정확도로 보고, 설명하기 쉬운 모델(Lasso)을 우선한다
+        tied = g[g.R2 >= g.R2.max() - 0.01]
         picks.append(tied.sort_values(["rank", "RMSE"]).iloc[0])
     best = pd.DataFrame(picks).set_index("lane")
     print("[select]\n", best[["model", "RMSE", "R2"]])
 
-    # 그림: 라인별 모델 RMSE (time-norm vs raw)
-    ORDER = ["Mean(baseline)", "LinearRegression", "Ridge", "Lasso", "KNN(k=15)", "SVR(RBF)",
-             "RandomForest", "HistGradientBoosting", "MLP(64-32)"]
-    present = {m.split(" [")[0] for m in summ.model.unique()}
-    models = [m for m in ORDER if m in present]
-    fig, axes = plt.subplots(1, 4, figsize=(13, 4.2), sharey=True)
+    # 그림: 라인별 모델 RMSE
+    ORDER = [("Mean(baseline)", "평균만 말하기"), ("LinearRegression", "LinearRegression"),
+             ("Ridge", "Ridge"), ("Lasso", "Lasso"), ("LightGBM-style", "LightGBM 방식 (비교용)")]
+    fig, axes = plt.subplots(1, 4, figsize=(13, 3.6), sharey=True)
     for ax, lane in zip(axes, LANES):
-        s = summ[summ.lane == lane].set_index("model")
-        y = np.arange(len(models))
-        raw = [s.RMSE.get(f"{m} [raw]", np.nan) for m in models]
-        tn = [s.RMSE.get(f"{m} [time-norm]", np.nan) for m in models]
-        ax.barh(y + 0.2, raw, height=0.38, color="#c3c2b7", label="원 격차 피처")
-        ax.barh(y - 0.2, tn, height=0.38, color=COLOR[lane], label="시점 정규화 피처")
-        ax.set_yticks(y, models)
+        s_ = summ[summ.lane == lane].set_index("model")
+        names = [lab for key, lab in ORDER if f"{key} [time-norm]" in s_.index]
+        vals = [s_.RMSE[f"{key} [time-norm]"] for key, lab in ORDER if f"{key} [time-norm]" in s_.index]
+        cols = ["#c3c2b7" if lab.startswith("평균") else ("#2563EB" if lab == "Lasso" else "#93a4bf")
+                for lab in names]
+        y = np.arange(len(names))
+        ax.barh(y, vals, height=0.6, color=cols)
+        for yy, v in zip(y, vals):
+            ax.text(v + 0.015, yy, f"{v:.3f}", va="center", fontsize=8)
+        ax.set_yticks(y, names)
         ax.invert_yaxis()
         ax.set_title(lane)
-        ax.set_xlabel("OOF RMSE (정규화 단위)")
-        ax.set_xlim(0, 1.1)
+        ax.set_xlabel("오차 RMSE (작을수록 정확)")
+        ax.set_xlim(0, 1.15)
         ax.grid(axis="y", visible=False)
-        ax.legend(frameon=False, fontsize=7, loc="lower right")
     fig.suptitle(f"라인별 모델 비교 — {cmp_desc} 교차검증", fontweight="bold")
     save(fig, out, "fig3_model_comparison.png")
 
@@ -214,6 +224,10 @@ def main(data_dir: str, out: str, features: str | None = None, end: str | None =
                 coef_rows.append({"lane": lane, "feature": f, "coef": float(w)})
 
         # OOF 예측 산점도 (seed 0)
+        if lane not in store:  # 비교 결과를 재사용한 경우: 산점도용 예측만 일부 경기로 다시 계산
+            sub_ids = np.random.default_rng(0).choice(md.match_id.unique(), min(3000, n_match), replace=False)
+            _, d_, oof_ = cross_validate_lane(md[md.match_id.isin(sub_ids)], lane, seeds=(0,), only=[full])
+            store[lane] = (d_, oof_)
         y_true, oof = store[lane][1][0]
         pred = oof[full]
         if len(pred) > 6000:  # 점이 너무 많으면 표본만 그림
@@ -245,12 +259,12 @@ def main(data_dir: str, out: str, features: str | None = None, end: str | None =
         for ax, lane in zip(axes, LANES):
             s = coef[(coef.lane == lane) & (coef.feature != "minute")].sort_values("coef")
             colors = [COLOR[lane] if v >= 0 else "#8a8984" for v in s.coef]
-            ax.barh(s.feature, s.coef, color=colors, height=0.6)
+            ax.barh([KOR.get(f, f) for f in s.feature], s.coef, color=colors, height=0.6)
             ax.axvline(0, color=INK, lw=0.6)
             ax.set_title(lane)
-            ax.set_xlabel("표준화 계수 w (TCI 기여)")
+            ax.set_xlabel("가중치 (클수록 중요, 음수는 손해)")
             ax.grid(axis="y", visible=False)
-        fig.suptitle("최종 Lasso 모델의 표준화 계수 (0 = Lasso가 제거한 피처)", fontweight="bold")
+        fig.suptitle("라인별 행동 가중치 — 최종 Lasso 모델", fontweight="bold")
         save(fig, out, "fig5_coefficients.png")
 
     # 5) 활용 예시: 한 경기의 라인별 TCI 곡선 --------------------------------

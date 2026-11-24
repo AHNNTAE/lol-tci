@@ -15,7 +15,7 @@ lol_tci_lane/
 ├── tci_lane/
 │   ├── data_process.py        # data_process_sample.py 변형: 분 단위 누적 격차 피처 추출
 │   ├── evaluate_target.py     # evaluate_y.py 확장: 타겟 후보의 승패 예측력 비교
-│   └── train.py               # 라인별 피처, 타겟 정규화, TimeNormalizer, 모델 9종 × 피처 2종 교차검증
+│   └── train.py               # 라인별 피처, 타겟 정규화, TimeNormalizer, 모델 비교(선형 3종 + 비교용 LightGBM 방식), 교차검증
 ├── results/                   # 30경기 예비 실험 결과
 ├── results_full/              # 38,075경기 전체 결과 (보고서 기준, metrics.json, figures/, models/)
 ├── results_players/           # 소환사별 TCI 요약(익명)과 그림
@@ -42,7 +42,7 @@ python extract_features.py --data match_data --workers 4
 #    → results/minute_features_full.csv.gz, results/end_of_game_full.csv.gz
 
 # 2) 모델 비교(무작위 2,000경기) → 최종 모델을 전체 경기로 교차검증·학습
-python run_all.py --features results/minute_features_full.csv.gz --end results/end_of_game_full.csv.gz --out results_full
+python run_all.py --features results/minute_features_full.csv.gz --end results/end_of_game_full.csv.gz --out results_full --compare-matches 1000000
 # (모델 비교를 건너뛰고 최종 단계만 다시 돌릴 때: --reuse-compare)
 
 # 3) 소환사별 TCI 평가 (puuid_challengers.txt 필요)
@@ -51,8 +51,8 @@ python analyze_players.py
 ```
 
 `--workers`는 동시에 처리할 파일 수입니다. 타임라인 파일 하나를 읽는 데 프로세스당 1GB 안팎의 메모리를
-쓰므로, RAM이 8GB이면 2, 16GB 이상이면 4를 권장합니다. 대규모 모드에서는 SVR(RBF)을 비교에서 제외합니다
-(표본 수의 제곱에 비례해 느려짐).
+쓰므로, RAM이 8GB이면 2, 16GB 이상이면 4를 권장합니다. 
+
 
 ## 저장된 모델 사용
 

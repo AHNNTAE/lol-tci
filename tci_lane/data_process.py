@@ -45,7 +45,34 @@ FEATURE_POOL = (
     "dragons_gap",      # 팀 드래곤 처치 격차
     "grubs_herald_gap", # 팀 공허 유충 + 전령 처치 격차
     "barons_gap",       # 팀 바론 처치 격차
+    # ---- 라인전 능력: 라인전 구간(14분, 포탑 방패가 사라지는 시점)까지의 성적. 14분 이후엔 그 값으로 고정
+    "lane_cs_gap",          # 14분까지 CS 격차
+    "lane_solo_kills_gap",  # 14분까지 솔로킬 격차
+    "lane_deaths_gap",      # 14분까지 데스 격차
+    # ---- 다른 라인 개입 (킬 기록의 위치 좌표로 판단)
+    "gank_gap",         # 정글러: 라인(탑·미드·바텀 길) 위에서 킬/어시스트한 횟수 격차 = 갱킹
+    "roam_gap",         # 미드: 탑·바텀 라인 위에서 킬/어시스트한 횟수 격차 = 로밍
+    "kp_gap",           # 킬 관여율 격차: (킬+어시스트) / 우리 팀 전체 킬
 )
+
+LANE_PHASE_END_MS = 14 * 60_000  # 라인전 구간의 끝 (포탑 방패가 사라지는 14분)
+
+
+def map_area(x: float, y: float) -> str:
+    """소환사의 협곡 좌표(약 0~14,870) → TOP / MID / BOT 라인, BASE(본진), JUNGLE(정글·강).
+
+    블루 본진이 왼쪽 아래, 레드 본진이 오른쪽 위. 탑 라인은 왼쪽·위쪽 가장자리,
+    바텀 라인은 아래쪽·오른쪽 가장자리, 미드 라인은 대각선이다. 경계는 근사치다.
+    """
+    if (x < 4000 and y < 4000) or (x > 10900 and y > 10900):
+        return "BASE"
+    if abs(x - y) < 1300:
+        return "MID"
+    if x < 2200 or y > 12700:
+        return "TOP"
+    if y < 2200 or x > 12700:
+        return "BOT"
+    return "JUNGLE"
 
 
 def load_pairs(data_dir: str):
@@ -113,13 +140,25 @@ def extract_match(match: dict, timeline: dict) -> list[dict]:
         if ty == "CHAMPION_KILL":
             k, v = int(e.get("killerId", 0)), int(e["victimId"])
             assists = e.get("assistingParticipantIds", []) or []
+            early = int(e["timestamp"]) <= LANE_PHASE_END_MS
+            pos_ = e.get("position") or {}
+            area = map_area(pos_.get("x", -1e9), pos_.get("y", -1e9)) if pos_ else "UNKNOWN"
             if k > 0:
                 per_p[k]["kills"] += 1
+                per_team[team_of(k)]["kills"] += 1
                 if not assists:
                     per_p[k]["solo_kills"] += 1
+                    if early:
+                        per_p[k]["lane_solo_kills"] += 1
             per_p[v]["deaths"] += 1
+            if early:
+                per_p[v]["lane_deaths"] += 1
             for a in assists:
                 per_p[int(a)]["assists"] += 1
+            for pid in ([k] if k > 0 else []) + [int(a) for a in assists]:
+                per_p[pid]["takedowns"] += 1
+                if area in ("TOP", "MID", "BOT"):
+                    per_p[pid][f"td_{area}"] += 1
         elif ty == "WARD_PLACED":
             if e.get("wardType") not in (None, "UNDEFINED") and e.get("creatorId", 0) > 0:
                 per_p[int(e["creatorId"])]["wards_placed"] += 1
@@ -149,6 +188,7 @@ def extract_match(match: dict, timeline: dict) -> list[dict]:
     rows: list[dict] = []
     ei = 0
     end_minute = int(match["info"]["gameDuration"] // 60)
+    lane_cs: dict[str, float] = {}  # 라인별 14분 시점 CS 격차 (그 뒤로 고정)
     for minute in range(1, min(len(frames), end_minute + 1)):
         fr = frames[minute]
         ts = int(fr["timestamp"])
@@ -170,6 +210,14 @@ def extract_match(match: dict, timeline: dict) -> list[dict]:
 
             def egap(stat):
                 return float(sum(per_p[i][stat] for i in b) - sum(per_p[i][stat] for i in r))
+
+            def kp(ids, team):  # 킬 관여율 = (킬+어시스트) / 팀 전체 킬
+                tk = per_team[team]["kills"]
+                return sum(per_p[i]["takedowns"] for i in ids) / len(ids) / tk if tk else 0.0
+
+            cs_now = gap(lambda p: p["minionsKilled"])
+            if ts <= LANE_PHASE_END_MS + 30_000:  # 14분 프레임까지는 계속 갱신
+                lane_cs[lane] = cs_now
 
             row = {
                 "match_id": mid,
@@ -197,6 +245,12 @@ def extract_match(match: dict, timeline: dict) -> list[dict]:
                 "dragons_gap": float(per_team[100]["dragons"] - per_team[200]["dragons"]),
                 "grubs_herald_gap": float(per_team[100]["grubs_herald"] - per_team[200]["grubs_herald"]),
                 "barons_gap": float(per_team[100]["barons"] - per_team[200]["barons"]),
+                "lane_cs_gap": lane_cs.get(lane, cs_now),
+                "lane_solo_kills_gap": egap("lane_solo_kills"),
+                "lane_deaths_gap": egap("lane_deaths"),
+                "gank_gap": egap("td_TOP") + egap("td_MID") + egap("td_BOT"),
+                "roam_gap": egap("td_TOP") + egap("td_BOT"),
+                "kp_gap": kp(b, 100) - kp(r, 200),
             }
             rows.append(row)
     return rows

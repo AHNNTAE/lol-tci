@@ -25,7 +25,7 @@ import pandas as pd
 
 from tci_lane.data_process import end_of_game_table, extract_match
 
-CACHE = "features_cache"
+CACHE = "features_cache_v3"  # 피처를 바꿨으므로 새 폴더 (예전 결과와 섞이지 않게)
 
 
 def _load(path: str) -> list:

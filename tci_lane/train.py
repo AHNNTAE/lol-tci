@@ -35,11 +35,16 @@ TARGET_COLS = ("gold_gap", "xp_gap")
 _COMMON = ["minute", "cs_gap", "dmg_gap", "kills_gap", "deaths_gap", "assists_gap",
            "cc_time_gap", "wards_placed_gap", "wards_killed_gap"]
 LANE_FEATURES = {
-    "TOP": _COMMON + ["solo_kills_gap", "dmg_taken_gap", "plates_gap", "turrets_gap", "grubs_herald_gap"],
+    # TOP: 라인전 능력 중심 (공허 유충·전령 제외)
+    "TOP": _COMMON + ["solo_kills_gap", "dmg_taken_gap", "plates_gap", "turrets_gap",
+                      "lane_cs_gap", "lane_solo_kills_gap", "lane_deaths_gap"],
+    # JUNGLE: 정글 CS + 갱킹 능력 + 오브젝트
     "JUNGLE": ["minute", "jungle_cs_gap", "cs_gap", "dmg_gap", "kills_gap", "deaths_gap", "assists_gap",
-               "cc_time_gap", "wards_placed_gap", "wards_killed_gap",
+               "cc_time_gap", "wards_placed_gap", "wards_killed_gap", "gank_gap",
                "dragons_gap", "grubs_herald_gap", "barons_gap"],
-    "MIDDLE": _COMMON + ["solo_kills_gap", "dmg_taken_gap", "plates_gap", "turrets_gap"],
+    # MIDDLE: 라인전 능력 + 로밍 + 킬 관여율
+    "MIDDLE": _COMMON + ["solo_kills_gap", "dmg_taken_gap", "plates_gap", "turrets_gap",
+                         "lane_cs_gap", "lane_solo_kills_gap", "lane_deaths_gap", "roam_gap", "kp_gap"],
     "BOTTOM": _COMMON + ["dmg_taken_gap", "plates_gap", "turrets_gap", "dragons_gap"],
 }
 
@@ -52,16 +57,10 @@ def make_models(seed: int = 0, time_norm: bool = True, exclude=()) -> dict:
         "LinearRegression": make_pipeline(sc(), LinearRegression()),
         "Ridge": make_pipeline(sc(), RidgeCV(alphas=np.logspace(-3, 3, 13))),
         "Lasso": make_pipeline(sc(), LassoCV(cv=5, random_state=seed)),
-        "KNN(k=15)": make_pipeline(sc(), KNeighborsRegressor(n_neighbors=15, weights="distance")),
-        "SVR(RBF)": make_pipeline(sc(), SVR(C=1.0, epsilon=0.1)),
-        "RandomForest": RandomForestRegressor(n_estimators=300, min_samples_leaf=5,
-                                              n_jobs=-1, random_state=seed),
-        "HistGradientBoosting": HistGradientBoostingRegressor(
+        # 비교용 복잡한 모델 1개: LightGBM 과 같은 방식의 부스팅
+        "LightGBM-style": HistGradientBoostingRegressor(
             learning_rate=0.05, max_iter=300, max_leaf_nodes=15, min_samples_leaf=20,
             l2_regularization=1.0, random_state=seed),
-        "MLP(64-32)": make_pipeline(sc(), MLPRegressor(
-            hidden_layer_sizes=(64, 32), alpha=1e-2, learning_rate_init=1e-3, max_iter=2000,
-            early_stopping=True, validation_fraction=0.15, n_iter_no_change=30, random_state=seed)),
     }
     base = {k: v for k, v in base.items() if k not in exclude}
     if not time_norm:
@@ -145,7 +144,7 @@ class TimeNormalizer(BaseEstimator, TransformerMixin):
 
 # ---------------------------------------------------------------- 교차검증
 def cross_validate_lane(df: pd.DataFrame, lane: str, seeds=(0, 1, 2), n_splits=5,
-                        modes=(("raw", False), ("time-norm", True)), exclude=(), only=None):
+                        modes=(("time-norm", True),), exclude=(), only=None):
     """only: ["Lasso [time-norm]"] 처럼 특정 후보만 평가할 때 사용."""
     d = df[df.lane == lane].reset_index(drop=True)
     feats = LANE_FEATURES[lane]

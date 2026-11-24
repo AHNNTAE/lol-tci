@@ -3,8 +3,8 @@
   "min_games": 30,
   "median_games": 226.0,
   "split_half_r_winrate": 0.12163021567018038,
-  "split_half_r_tci": 0.7892842568940138,
-  "corr_tci_winrate": 0.19873173450316228,
+  "split_half_r_tci": 0.7894873733169572,
+  "corr_tci_winrate": 0.20374397217002785,
   "lanes": {
     "BOTTOM": 106,
     "JUNGLE": 67,
@@ -23,7 +23,7 @@
       "lane": "TOP",
       "games": 152,
       "win_rate": 0.5592105263157895,
-      "tci": 0.5451561827480113,
+      "tci": 0.5382247110177477,
       "tci_rank": 6,
       "win_rank": 129
     },
@@ -32,7 +32,7 @@
       "lane": "TOP",
       "games": 309,
       "win_rate": 0.5631067961165048,
-      "tci": -0.2976731717610962,
+      "tci": -0.28882109277720774,
       "tci_rank": 298,
       "win_rank": 116
     }
